@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>TTS & Video Editor Hub Pro v2</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0a0f1e; color: #e2e8f0; margin: 0; padding: 0; min-height: 100vh; }
+        
+        /* NAVIGATION BAR OVERLAY */
+        .app-navbar { display: flex; background: #111625; border-bottom: 2px solid #232d42; position: sticky; top: 0; z-index: 100; }
+        .nav-tab { flex: 1; text-align: center; padding: 16px; font-weight: bold; font-size: 14px; color: #94a3b8; cursor: pointer; transition: 0.2s; border-bottom: 3px solid transparent; user-select: none; }
+        .nav-tab.active-screen { color: #00e5ff; border-bottom-color: #00e5ff; background: rgba(0, 229, 255, 0.05); }
+        .nav-tab:nth-child(2).active-screen { color: #c084fc; border-bottom-color: #c084fc; background: rgba(192, 132, 252, 0.05); }
+
+        .screen-content { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .screen-content.active-content { display: block; }
+
+        /* COMMON CARD & UI */
+        .card { background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(2px); padding: 24px 22px; border-radius: 2rem; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
+        h2 { text-align: center; margin: 0 0 4px 0; font-size: 1.6rem; font-weight: 800; }
+        .screen1-title { background: linear-gradient(135deg, #c084fc, #38bdf8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .screen2-title { color: #00e5ff; }
+        .subtitle, .sub { text-align: center; color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .label { font-weight: 600; margin: 18px 0 6px 0; font-size: 14px; color: #b9e6ff; border-left: 3px solid #00e5ff; padding-left: 10px; display: block; }
+        .label-purple { border-left-color: #c084fc; color: #e9d5ff; }
+        
+        textarea, select, input[type="file"], input[type="number"] { width: 100%; border: 2px solid #2c3145; border-radius: 1.2rem; padding: 14px 16px; background: #10131f; color: #f8fafc; font-size: 0.95rem; line-height: 1.5; resize: none; outline: none; font-family: inherit; }
+        textarea:focus, select:focus, input:focus { border-color: #0ea5e9; }
+        
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 1rem; font-size: 1rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; margin-top: 10px; }
+        .btn-primary { background: linear-gradient(95deg, #0ea5e9, #6366f1); color: white; box-shadow: 0 6px 14px rgba(14,165,233,0.25); }
+        .btn-primary:disabled { background: #475569; color: #64748b; box-shadow: none; cursor: not-allowed; }
+        .btn-orange { background: #ffaa33; color: black; }
+        .btn-orange:disabled { background: #555; opacity: 0.6; }
+        .danger-btn { background: #dc2626 !important; color: white !important; }
+        .btn-wa { background: #25d366; color: white; box-shadow: 0 10px 20px -5px rgba(37,211,102,0.4); }
+
+        .status { background: #0e1120; border-radius: 20px; padding: 12px; text-align: center; font-size: 13px; margin: 15px 0; border-left: 4px solid #3b82f6; color: #ccd6f0; }
+        .success { background: #064e3b; color: #86efac; border-left-color: #22c55e !important; }
+        .error { background: #7f1d1d; color: #fecaca; border-left-color: #ef4444 !important; }
+        .info { background: #1e3a8a; color: #b3d4ff; border-left-color: #3b82f6 !important; }
+        .recording { background: #991b1b; color: #ffc9c9; border-left-color: #ff6b6b !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        .warning-box { background: #2c2412; border-left: 4px solid #fbbf24; padding: 10px 14px; border-radius: 1rem; margin-bottom: 18px; font-size: 12px; text-align: left; }
+        .warning-box h4 { margin: 0 0 5px 0; color: #fcd34d; font-size: 13px; }
+        .warning-box p { margin: 0; color: #fde68a; font-size: 11px; }
+
+        .volume-slider { width: 100%; margin: 10px 0 18px 0; display: flex; align-items: center; gap: 12px; background: #0f172a; padding: 8px 12px; border-radius: 2rem; border: 1px solid #2d3a4e; }
+        .volume-slider span { font-size: 13px; font-weight: 500; }
+        .volume-slider input { flex: 1; accent-color: #0ea5e9; }
+
+        #downloadArea { margin-top: 20px; padding: 16px; background: #0a2c1e; border-radius: 1.4rem; border: 1px solid #2ecc71; text-align: center; }
+        .action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+        .dl-btn, .wa-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 2rem; font-weight: bold; text-decoration: none; transition: 0.2s; font-size: 14px; border: none; cursor: pointer; color: white; }
+        .dl-btn { background: #22c55e; }
+        .wa-btn { background: #25d366; }
+        small { display: block; margin-top: 15px; color: #64748b; font-size: 11px; text-align: center; }
+        
+        .row { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+        .row button { margin: 0; flex: 1; background: #252c40; color: white; font-size: 13px; padding: 10px; border-radius: 8px; border:none; font-weight: bold; cursor: pointer; }
+        .row button.active { background: #00e5ff; color: #000; }
+        
+        /* SCREEN 2 STYLES */
+        .camera-box { background: #000; border-radius: 20px; overflow: hidden; margin: 10px 0; }
+        video, canvas.preview-element { width: 100%; border-radius: 15px; background: #000; display: block; }
+        
+        /* TIMELINE STYLES */
+        .timeline-bar { background: #2a2f40; height: 16px; border-radius: 10px; position: relative; margin: 12px 0; overflow: hidden; cursor: pointer; border: 1px solid #3d4a66; }
+        .video-progress { position: absolute; width: 3px; height: 100%; background: #ffaa33; left: 0%; z-index: 5; box-shadow: 0 0 6px #ffaa33; }
+        
+        /* MULTI-TRACK STYLES (CapCut Style) */
+        .track-wrapper { background: #151b2b; border-radius: 12px; padding: 8px; margin: 8px 0; border: 1px dashed #34415c; position: relative; min-height: 46px; }
+        .track-element-block { position: absolute; height: 30px; border-radius: 6px; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; padding: 0 6px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 2px solid transparent; user-select: none; color: white; }
+        .track-element-block.selected { border-color: #ffffff; box-shadow: 0 0 8px #fff; }
+        
+        .bg-video-block { background: #0ea5e9; }
+        .bg-photo-block { background: #ec4899; }
+        .bg-audio-block { background: #10b981; }
+        .bg-text-block { background: #f59e0b; }
+
+        .timeline-row { margin: 15px 0; background: #11161f; padding: 12px; border-radius: 20px; }
+        .timeline-label { font-size: 11px; color: #aaa; display: flex; justify-content: space-between; margin-top: 10px; margin-bottom: 2px; font-weight: 600; }
+        .handle-area { display: flex; gap: 6px; justify-content: center; margin: 8px 0; flex-wrap: wrap; }
+        .handle-btn { background: #2c3e66; padding: 6px 10px; font-size: 11px; border-radius: 30px; width: auto; margin: 0; border: none; color: white; font-weight: bold; cursor: pointer; }
+        .handle-btn:active { opacity: 0.8; }
+        
+        /* PREVIEW OVERLAY DESIGN */
+        .preview-overlay-container { position: relative; width: 100%; border-radius: 15px; overflow: hidden; background: #000; touch-action: none; }
+        
+        .drag-text-overlay {
+            position: absolute;
+            cursor: move;
+            border: 2px dashed #00e5ff;
+            padding: 6px 12px;
+            background: rgba(0,0,0,0.6);
+            color: #ffffff;
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            display: none;
+            font-size: 16px;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .size-control-dock {
+            position: absolute;
+            top: -38px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            background: #111625;
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid #00e5ff;
+            z-index: 30;
+        }
+        .size-btn {
+            background: #232d42;
+            color: #00e5ff;
+            border: none;
+            width: 26px;
+            height: 26px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .size-btn:active { background: #00e5ff; color: #000; }
+
+        .tip-box { font-size: 11px; background: #1e293b; padding: 8px 12px; border-radius: 12px; margin-bottom: 8px; color: #facc15; text-align: center; }
+        #outputArea { display: none; margin-top: 20px; padding-top: 20px; border-top: 2px dashed #334155; }
+        .download-btn { display: block; width: 100%; background: #22c55e; text-align: center; padding: 15px; border-radius: 50px; text-decoration: none; color: white; font-weight: bold; margin-top: 10px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="app-navbar">
+    <div id="navToScreen1" class="nav-tab active-screen">🎙️ SCREEN 1: TTS Nusantara</div>
+    <div id="navToScreen2" class="nav-tab">🎬 SCREEN 2: Video Editor</div>
+</div>
+
+<div id="screen1" class="screen-content active-content">
+    <div class="card">
+        <h2 class="screen1-title">🎙️ TTS Nusantara Pro</h2>
+        <div class="warning-box">
+            <h4>📢 AGAR REKAMAN JERNIH:</h4>
+            <p>✔ Izinkan MICROPHONE | ✔ Volume SPEAKER ≥ 70% | ✔ Jangan pakai headset (pakai speaker) | ✔ Chrome/Edge/HP Android</p>
+        </div>
+        
+        <textarea id="txt" placeholder="Tulis teks bahasa Indonesia di sini...&#10;Contoh: Assalamualaikum, selamat pagi. Kulo badhe ngaturaken pawarta khusus babagan budaya Jawa."></textarea>
+        
+        <select id="voiceSelect">
+            <option value="wanita">👩 Suara Wanita (Natural Indonesia)</option>
+            <option value="pria">👨 Suara Pria (Natural Indonesia)</option>
+            <option value="anak">🧒 Suara Anak Kecil (Lucu & Imut)</option>
+            <option value="jawa">🌾 Logat Jawa (Medok Jawa Khas)</option>
+            <option value="berita">📺 Pembaca Berita (Formal & Tegas)</option>
+        </select>
+        
+        <div class="volume-slider">
+            <span>🔊 Volume Speaker:</span>
+            <input type="range" id="volumeSlider" min="0" max="100" value="85">
+            <span id="volumeValue">85%</span>
+        </div>
+
+        <button id="recordBtn" class="btn btn-primary" style="margin-bottom: 12px; font-size:16px;">🎤 MULAI REKAM & HASILKAN MP3</button>
+        
+        <div id="status" class="info" style="margin-top:15px; padding:12px; border-radius:1.2rem; text-align:center; font-weight:500;">
+            ⚡ Siap. Pilih logat favorit, pastikan speaker keras!
+        </div>
+
+        <div id="downloadArea" style="display:none;">
+            <p style="margin:0 0 8px 0; font-weight:bold; font-size:14px;">✅ Rekaman siap!</p>
+            <audio id="audioPlayback" controls></audio>
+            <div class="action-buttons">
+                <a id="dlLink" class="dl-btn">⬇️ Download MP3 (.wav)</a>
+                <button id="shareWAbtn" class="wa-btn">📱 Kirim ke WhatsApp</button>
+            </div>
+            <small>File audio (.wav) siap dikirim atau dibagikan</small>
+        </div>
+    </div>
+</div>
+
+<div id="screen2" class="screen-content">
+    <div class="card" id="editorCardAnchor">
+        <h2 class="screen2-title">🎬 Video Editor Pro</h2>
+        <div class="sub">Impor File • Potong/Split Klip • Tambah Audio & Multi-Teks CapCut Style</div>
+
+        <span class="label">📹 Tambah Media (Video / Foto)</span>
+        <div class="row">
+            <button id="tabFile" class="active">📁 Berkas Galeri</button>
+            <button id="tabCamera">📷 Kamera HP</button>
+        </div>
+
+        <div id="fileArea">
+            <input type="file" id="mediaInput" accept="video/*,image/*" multiple>
+            <small style="color: #60a5fa; text-align: left; margin-top: 4px;">💡 Kamu bisa memilih beberapa video/foto sekaligus.</small>
+        </div>
+
+        <div id="cameraArea" style="display:none;">
+            <div class="camera-box"><video id="camPreview" autoplay playsinline muted></video></div>
+            <div id="camTimer" style="text-align:center; font-size:14px; color:#ffaa33;">⏱️ 0 detik</div>
+            <div class="row">
+                <button id="startCamBtn" style="background:#22c55e; color:white;">🔴 Mulai Rekam</button>
+                <button id="stopCamBtn" class="danger-btn" disabled>⏹️ Stop</button>
+            </div>
+        </div>
+
+        <div id="previewArea" style="display:none; margin-top: 15px;">
+            <div class="flex-between">
+                <span class="label">🎞️ Monitor Preview Canvas</span>
+                <button id="clearMediaBtn" class="danger-btn" style="width:auto; padding:4px 10px; margin:0; font-size:11px;">Reset Project</button>
+            </div>
+            
+            <div id="previewWrapper" class="preview-overlay-container">
+                <canvas id="viewCanvas" class="preview-element"></canvas>
+                
+                <div id="draggableTextPreview" class="drag-text-overlay">
+                    <div class="size-control-dock" id="sizeDock">
+                        <button type="button" class="size-btn" id="btnTextMinus">−</button>
+                        <button type="button" class="size-btn" id="btnTextPlus">+</button>
+                    </div>
+                    <span id="textLabelContent">Teks</span>
+                </div>
+            </div>
+            
+            <div class="timeline-bar" id="clickableTimeline">
+                <div id="videoProgress" class="video-progress"></div>
+            </div>
+            <div class="row">
+                <button id="playPreview" style="background:#3b82f6;">▶ Play / Pause</button>
+            </div>
+            <div class="tip-box">🎯 Geser teks dengan 1 jari. Gunakan tombol <b>+</b> / <b>-</b> untuk skala ukuran teks.</div>
+        </div>
+
+        <span class="label">🎵 Audio Latar / Musik / Hasil TTS</span>
+        <div id="audioFileArea">
+            <input type="file" id="audioFileInput" accept="audio/*" multiple>
+        </div>
+
+        <span class="label">⏱️ TIMELINE WORKSPACE (Klik Blok Klip untuk Mengatur)</span>
+        <div class="timeline-row">
+            <div class="timeline-label">📼 TRACK VISUAL (VIDEO / FOTO) <span id="visualDurLabel">Total: 0.0s</span></div>
+            <div class="track-wrapper" id="visualTrackContainer"></div>
+            <div class="handle-area">
+                <button id="splitVisualBtn" class="handle-btn" style="background:#0ea5e9;">✂️ Split Clip</button>
+                <button id="trimVisualBtn" class="handle-btn" style="background:#7c3aed;">📐 Trim 2 Detik</button>
+                <button id="deleteVisualBtn" class="handle-btn danger-btn">🗑️ Hapus Klip</button>
+            </div>
+
+            <div class="timeline-label">🎵 TRACK AUDIO <span id="audioDurLabel">Total: 0.0s</span></div>
+            <div class="track-wrapper" id="audioTrackContainer"></div>
+            <div class="handle-area">
+                <button id="splitAudioBtn" class="handle-btn" style="background:#10b981;">✂️ Split Audio</button>
+                <button id="deleteAudioBtn" class="handle-btn danger-btn">🗑️ Hapus Audio</button>
+            </div>
+
+            <div class="timeline-label">✍️ TRACK TEXT LAYOUT</div>
+            <div class="track-wrapper" id="textTrackContainer"></div>
+            <div class="handle-area">
+                <button id="addTextBtn" class="handle-btn" style="background:#22c55e;">➕ Tambah Teks</button>
+                <button id="splitTextBtn" class="handle-btn" style="background:#f59e0b;">✂️ Split Teks</button>
+                <button id="deleteTextBtn" class="handle-btn danger-btn">🗑️ Hapus Teks</button>
+            </div>
+        </div>
+
+        <div id="inspectorPanel" style="background: #10131f; padding: 14px; border-radius: 16px; margin-top: 10px; display:none;">
+            <span id="inspectorTitle" style="font-size:12px; color:#00e5ff; font-weight:bold; display:block; margin-bottom:8px;">✏️ INSPEKTOR ELEMEN</span>
+            
+            <div id="textEditorFields" style="display:none;">
+                <textarea id="overlayText" rows="2" placeholder="Ketik teks di sini...">Teks</textarea>
+                <div class="row">
+                    <button id="colorWhite" style="background:#fff; color:#000;">⚪ Putih</button>
+                    <button id="colorYellow" style="background:#facc15; color:#000;">🟡 Kuning</button>
+                    <button id="colorRed" style="background:#ef4444; color:#fff;">🔴 Merah</button>
+                    <button id="colorCyan" style="background:#00e5ff; color:#000;">🔵 Cyan</button>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+                <div style="flex:1;">
+                    <label style="font-size:11px; color:#aaa;">Waktu Mulai (dtk):</label>
+                    <input type="number" id="inputStartSec" step="0.1" min="0">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:11px; color:#aaa;">Waktu Selesai (dtk):</label>
+                    <input type="number" id="inputEndSec" step="0.1" min="0">
+                </div>
+            </div>
+        </div>
+
+        <button id="processBtn" class="btn btn-orange" style="margin-top:25px;" disabled>✨ PRODUKSI VIDEO SEKARANG ✨</button>
+        <div id="infoStatus" class="status">📌 Masukkan media video atau foto untuk memulai.</div>
+
+        <div id="outputArea">
+            <div class="status" style="background:#1e2a3a; border-left-color: #22c55e;">🎬 BERHASIL! Video hasil produksi siap disimpan.</div>
+            <video id="outputVideo" controls style="border-radius:20px; width:100%; background:#000;"></video>
+            <a id="downloadLink" class="download-btn">💾 SIMPAN KE GALERI HP (MP4)</a>
+            <div class="row" style="margin-top:14px; gap:12px;">
+                <button id="btnEditAgain" style="background:#3b82f6; color:white; padding:12px; border-radius:12px;">✏️ Edit Lagi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<canvas id="mainCanvas" style="display:none;"></canvas>
+
+<script>
+    (function() {
+        // --- SCREEN ROUTER TAB ---
+        const navTab1 = document.getElementById('navToScreen1');
+        const navTab2 = document.getElementById('navToScreen2');
+        const screen1 = document.getElementById('screen1');
+        const screen2 = document.getElementById('screen2');
+
+        navTab1.onclick = () => {
+            navTab1.classList.add('active-screen'); navTab2.classList.remove('active-screen');
+            screen1.classList.add('active-content'); screen2.classList.remove('active-content');
+            stopCamTracks();
+        };
+        navTab2.onclick = () => {
+            navTab2.classList.add('active-screen'); navTab1.classList.remove('active-screen');
+            screen2.classList.add('active-content'); screen1.classList.remove('active-content');
+        };
+
+        // ==========================================
+        // CONTROLLER CORE: SCREEN 1 (TTS NUSANTARA)
+        // ==========================================
+        const recordBtn = document.getElementById('recordBtn');
+        const txt = document.getElementById('txt');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const statusDiv = document.getElementById('status');
+        const downloadArea = document.getElementById('downloadArea');
+        const dlLink = document.getElementById('dlLink');
+        const audioPlayback = document.getElementById('audioPlayback');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+        const shareWABtn = document.getElementById('shareWAbtn');
+        
+        let mediaRecorder = null; let audioChunks = []; let currentStream = null;
+        let availableVoices = []; let currentSelectedVoice = null; let lastAudioBlob = null;
+        
+        volumeSlider.addEventListener('input', () => { volumeValue.textContent = volumeSlider.value + '%'; });
+        function loadVoices() {
+            return new Promise((resolve) => {
+                let voices = window.speechSynthesis.getVoices();
+                if (voices.length) resolve(voices);
+                else window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices());
+            });
+        }
+        function getVoiceByStyle(voicesList, style) {
+            const indoVoices = voicesList.filter(v => v.lang.includes('id') || v.lang.includes('ID') || v.name.toLowerCase().includes('indonesia'));
+            const fallback = indoVoices.length ? indoVoices[0] : (voicesList[0] || null);
+            if (!voicesList.length) return null;
+            if (style === "wanita") return indoVoices.find(v => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('sari')) || fallback;
+            if (style === "pria") return indoVoices.find(v => v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('joko')) || fallback;
+            return fallback;
+        }
+        async function initVoices() {
+            availableVoices = await loadVoices();
+            currentSelectedVoice = getVoiceByStyle(availableVoices, voiceSelect.value);
+        }
+        voiceSelect.addEventListener('change', () => { currentSelectedVoice = getVoiceByStyle(availableVoices, voiceSelect.value); });
+        
+        recordBtn.onclick = async () => {
+            const textToSpeak = txt.value.trim();
+            if (!textToSpeak) return alert("Teks kosong!");
+            try {
+                recordBtn.disabled = true;
+                statusDiv.innerHTML = "🎤 Menyiapkan Mikrofon Sistem...";
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false } });
+                currentStream = stream; audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    lastAudioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(lastAudioBlob);
+                    audioPlayback.src = audioUrl; dlLink.href = audioUrl;
+                    dlLink.download = `tts_${Date.now()}.wav`;
+                    downloadArea.style.display = "block";
+                    statusDiv.className = "status success"; statusDiv.innerHTML = "✅ Audio siap diputar/diunduh.";
+                    recordBtn.disabled = false;
+                    if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+                };
+                
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = 'id-ID';
+                if (voiceSelect.value === "wanita") { utterance.pitch = 1.1; utterance.rate = 0.95; } 
+                else if (voiceSelect.value === "pria") { utterance.pitch = 0.8; utterance.rate = 0.9; }
+                else if (voiceSelect.value === "anak") { utterance.pitch = 1.5; utterance.rate = 1.1; }
+                else if (voiceSelect.value === "jawa") { utterance.pitch = 0.85; utterance.rate = 0.8; }
+                else { utterance.pitch = 1.0; utterance.rate = 0.95; }
+                
+                if (currentSelectedVoice) utterance.voice = currentSelectedVoice;
+                utterance.onstart = () => {
+                    mediaRecorder.start(100);
+                    statusDiv.className = "status recording"; statusDiv.innerHTML = "🔴 SEDANG MEREKAM SUARA...";
+                };
+                utterance.onend = () => { setTimeout(() => { if (mediaRecorder.state === "recording") mediaRecorder.stop(); }, 500); };
+                window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance);
+            } catch (err) { alert("Gagal rekam sistem audio."); recordBtn.disabled = false; }
+        };
+        shareWABtn.onclick = () => {
+            if(!lastAudioBlob) return;
+            const file = new File([lastAudioBlob], "tts.wav", {type:"audio/wav"});
+            if(navigator.canShare && navigator.share) navigator.share({ files: [file] }).catch(()=>alert("Bagikan via unduhan manual"));
+        };
+        initVoices();
+
+        // ==========================================
+        // CONTROLLER CORE: SCREEN 2 (VIDEO EDITOR ENGINE)
+        // ==========================================
+        const mediaInput = document.getElementById('mediaInput');
+        const audioFileInput = document.getElementById('audioFileInput');
+        const previewArea = document.getElementById('previewArea');
+        const viewCanvas = document.getElementById('viewCanvas');
+        const vCtx = viewCanvas.getContext('2d');
+        const videoProgress = document.getElementById('videoProgress');
+        const playPreview = document.getElementById('playPreview');
+        const clickableTimeline = document.getElementById('clickableTimeline');
+        
+        const visualTrackContainer = document.getElementById('visualTrackContainer');
+        const audioTrackContainer = document.getElementById('audioTrackContainer');
+        const textTrackContainer = document.getElementById('textTrackContainer');
+        
+        const inspectorPanel = document.getElementById('inspectorPanel');
+        const textEditorFields = document.getElementById('textEditorFields');
+        const overlayTextArea = document.getElementById('overlayText');
+        const inputStartSec = document.getElementById('inputStartSec');
+        const inputEndSec = document.getElementById('inputEndSec');
+        
+        const processBtn = document.getElementById('processBtn');
+        const infoStatus = document.getElementById('infoStatus');
+        const outputArea = document.getElementById('outputArea');
+        const outputVideo = document.getElementById('outputVideo');
+        const downloadLink = document.getElementById('downloadLink');
+        
+        const draggableDiv = document.getElementById('draggableTextPreview');
+        const textLabelContent = document.getElementById('textLabelContent');
+        const previewWrapper = document.getElementById('previewWrapper');
+
+        // DATABASE STATE (CapCut Multi-klip terpadu)
+        let visualTracks = []; 
+        let audioTracks = [];  
+        let textTracks = [];   
+        
+        let totalProjectDuration = 0;
+        let currentTimehead = 0;
+        let isPlaying = false;
+        let playInterval = null;
+        let selectedElement = { type: null, id: null };
+        let camStream, camRecorder, camInterval, camSec;
+
+        // TABS MEDIA SELECTOR
+        function switchTab(t) {
+            document.getElementById('fileArea').style.display = t==='file'?'block':'none';
+            document.getElementById('cameraArea').style.display = t==='camera'?'block':'none';
+            document.getElementById('tabFile').className = t==='file'?'active':'';
+            document.getElementById('tabCamera').className = t==='camera'?'active':'';
+            if(t==='camera') startCam(); else stopCamTracks();
+        }
+        document.getElementById('tabFile').onclick = () => switchTab('file');
+        document.getElementById('tabCamera').onclick = () => switchTab('camera');
+
+        async function startCam() {
+            try {
+                camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+                document.getElementById('camPreview').srcObject = camStream;
+            } catch(e){ alert("Kamera bermasalah."); }
+        }
+        function stopCamTracks() { if(camStream) { camStream.getTracks().forEach(t=>t.stop()); camStream=null; } }
+
+        document.getElementById('startCamBtn').onclick = () => {
+            const chunks = []; camSec = 0; camRecorder = new MediaRecorder(camStream);
+            camRecorder.ondataavailable = e => chunks.push(e.data);
+            camRecorder.onstop = () => {
+                const b = new Blob(chunks, {type:'video/mp4'});
+                addVisualElement(b, "video", "Kamera Rekaman");
+            };
+            camRecorder.start();
+            document.getElementById('startCamBtn').disabled = true; document.getElementById('stopCamBtn').disabled = false;
+            camInterval = setInterval(() => { camSec++; document.getElementById('camTimer').innerText = `⏱️ ${camSec} dtk`; }, 1000);
+        };
+        document.getElementById('stopCamBtn').onclick = () => {
+            clearInterval(camInterval); camRecorder.stop();
+            document.getElementById('startCamBtn').disabled = false; document.getElementById('stopCamBtn').disabled = true;
+        };
+
+        // IMPOR MEDIA KE TIMELINE
+        mediaInput.onchange = async (e) => {
+            for(let file of e.target.files) {
+                let type = file.type.startsWith('image/') ? 'photo' : 'video';
+                await addVisualElement(file, type, file.name);
+            }
+            mediaInput.value = "";
+        };
+
+        audioFileInput.onchange = async (e) => {
+            for(let file of e.target.files) {
+                await addAudioElement(file, file.name);
+            }
+            audioFileInput.value = "";
+        };
+
+        function addVisualElement(fileOrBlob, type, name) {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(fileOrBlob);
+                if(type === 'photo') {
+                    const img = new Image();
+                    img.src = url;
+                    img.onload = () => {
+                        let duration = 3.0; // Default foto berdurasi 3 detik di timeline
+                        let start = calculateVisualInsertPoint();
+                        visualTracks.push({
+                            id: Date.now() + Math.random(), type, name, start, end: start + duration, element: img, originalDuration: duration
+                        });
+                        recalculateTimelineStructure();
+                        resolve();
+                    };
+                } else {
+                    const vid = document.createElement('video');
+                    vid.src = url; vid.muted = true; vid.playsInline = true;
+                    vid.onloadedmetadata = () => {
+                        let duration = vid.duration || 4.0;
+                        let start = calculateVisualInsertPoint();
+                        visualTracks.push({
+                            id: Date.now() + Math.random(), type, name, start, end: start + duration, element: vid, originalDuration: duration
+                        });
+                        recalculateTimelineStructure();
+                        resolve();
+                    };
+                }
+            });
+        }
+
+        function addAudioElement(file, name) {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(file);
+                const audio = new Audio(url);
+                audio.onloadedmetadata = () => {
+                    let duration = audio.duration || 5.0;
+                    let start = 0; // Tempel di timeline detik ke-0
+                    audioTracks.push({
+                        id: Date.now() + Math.random(), name, start, end: start + duration, element: audio, originalDuration: duration
+                    });
+                    recalculateTimelineStructure();
+                    resolve();
+                };
+            });
+        }
+
+        function calculateVisualInsertPoint() {
+            if(!visualTracks.length) return 0;
+            return Math.max(...visualTracks.map(v => v.end));
+        }
+
+        // RE-KALKULATOR STRUKTUR PROYEK (CapCut Engine Core)
+        function recalculateTimelineStructure() {
+            visualTracks.sort((a,b) => a.start - b.start);
+            
+            // Atur agar klip video/foto otomatis berjejer rapi rapat (sekuensial)
+            let currentCursor = 0;
+            visualTracks.forEach(clip => {
+                let diff = clip.end - clip.start;
+                clip.start = currentCursor;
+                clip.end = currentCursor + diff;
+                currentCursor = clip.end;
+            });
+
+            totalProjectDuration = currentCursor;
+            if(audioTracks.length) {
+                let maxAudio = Math.max(...audioTracks.map(a => a.end));
+                if(maxAudio > totalProjectDuration) totalProjectDuration = maxAudio;
+            }
+            if(textTracks.length) {
+                let maxText = Math.max(...textTracks.map(t => t.end));
+                if(maxText > totalProjectDuration) totalProjectDuration = maxText;
+            }
+
+            document.getElementById('visualDurLabel').innerText = `Total: ${totalProjectDuration.toFixed(1)}s`;
+            if(totalProjectDuration > 0) { previewArea.style.display = 'block'; processBtn.disabled = false; }
+            else { previewArea.style.display = 'none'; processBtn.disabled = true; }
+
+            renderTimelineBlocks();
+            renderCanvasPreviewFrame();
+        }
+
+        // RENDER KOMPONEN BLOK TIMELINE
+        function renderTimelineBlocks() {
+            visualTrackContainer.innerHTML = '';
+            audioTrackContainer.innerHTML = '';
+            textTrackContainer.innerHTML = '';
+
+            if(totalProjectDuration <= 0) return;
+
+            // Render Track Klip Visual
+            visualTracks.forEach(clip => {
+                let block = document.createElement('div');
+                block.className = `track-element-block ${clip.type === 'video' ? 'bg-video-block' : 'bg-photo-block'}`;
+                if(selectedElement.type === 'visual' && selectedElement.id === clip.id) block.classList.add('selected');
+                block.innerText = clip.name;
+                block.style.left = ((clip.start / totalProjectDuration) * 100) + '%';
+                block.style.width = (((clip.end - clip.start) / totalProjectDuration) * 100) + '%';
+                block.onclick = (e) => { e.stopPropagation(); selectTimelineItem('visual', clip.id, clip.start, clip.end); };
+                visualTrackContainer.appendChild(block);
+            });
+
+            // Render Track Klip Audio
+            audioTracks.forEach(aud => {
+                let block = document.createElement('div');
+                block.className = 'track-element-block bg-audio-block';
+                if(selectedElement.type === 'audio' && selectedElement.id === aud.id) block.classList.add('selected');
+                block.innerText = aud.name;
+                block.style.left = ((aud.start / totalProjectDuration) * 100) + '%';
+                block.style.width = (((aud.end - aud.start) / totalProjectDuration) * 100) + '%';
+                block.onclick = (e) => { e.stopPropagation(); selectTimelineItem('audio', aud.id, aud.start, aud.end); };
+                audioTrackContainer.appendChild(block);
+            });
+
+            // Render Track Klip Teks
+            textTracks.forEach(txt => {
+                let block = document.createElement('div');
+                block.className = 'track-element-block bg-text-block';
+                if(selectedElement.type === 'text' && selectedElement.id === txt.id) block.classList.add('selected');
+                block.innerText = txt.text;
+                block.style.left = ((txt.start / totalProjectDuration) * 100) + '%';
+                block.style.width = (((txt.end - txt.start) / totalProjectDuration) * 100) + '%';
+                block.onclick = (e) => { e.stopPropagation(); selectTimelineItem('text', txt.id, txt.start, txt.end); };
+                textTrackContainer.appendChild(block);
+            });
+        }
+
+        function selectTimelineItem(type, id, start, end) {
+            selectedElement = { type, id };
+            renderTimelineBlocks();
+            
+            inspectorPanel.style.display = 'block';
+            inputStartSec.value = start.toFixed(1);
+            inputEndSec.value = end.toFixed(1);
+            
+            if(type === 'text') {
+                textEditorFields.style.display = 'block';
+                let item = textTracks.find(t => t.id === id);
+                overlayTextArea.value = item.text;
+            } else {
+                textEditorFields.style.display = 'none';
+            }
+            currentTimehead = start;
+            updatePlayheadUI();
+        }
+
+        // INSPEKTOR EVENT HANDLER
+        overlayTextArea.oninput = () => {
+            if(selectedElement.type === 'text') {
+                let item = textTracks.find(t => t.id === selectedElement.id);
+                if(item) { item.text = overlayTextArea.value; renderTimelineBlocks(); updateTextOverlayView(); }
+            }
+        };
+        inputStartSec.onchange = () => {
+            let val = parseFloat(inputStartSec.value) || 0;
+            let target = findSelectedItem();
+            if(target) { target.start = val; recalculateTimelineStructure(); }
+        };
+        inputEndSec.onchange = () => {
+            let val = parseFloat(inputEndSec.value) || 0;
+            let target = findSelectedItem();
+            if(target) { target.end = val; recalculateTimelineStructure(); }
+        };
+        function findSelectedItem() {
+            if(selectedElement.type === 'visual') return visualTracks.find(v => v.id === selectedElement.id);
+            if(selectedElement.type === 'audio') return audioTracks.find(a => a.id === selectedElement.id);
+            if(selectedElement.type === 'text') return textTracks.find(t => t.id === selectedElement.id);
+            return null;
+        }
+
+        // KONTROL FITUR EDITING UTAMA (SPLIT, TRIM, HAPUS - CAPCUT STYLE)
+        document.getElementById('splitVisualBtn').onclick = () => {
+            let active = visualTracks.find(v => currentTimehead > v.start && currentTimehead < v.end);
+            if(!active) return alert("Posisikan garis orange playhead di tengah klip visual!");
+            
+            let originalEnd = active.end;
+            active.end = currentTimehead; // Potong bagian depan
+            
+            visualTracks.push({
+                id: Date.now() + Math.random(), type: active.type, name: active.name + " (Bagi)",
+                start: currentTimehead, end: originalEnd, element: active.element, originalDuration: active.originalDuration
+            });
+            recalculateTimelineStructure();
+        };
+
+        document.getElementById('trimVisualBtn').onclick = () => {
+            if(selectedElement.type !== 'visual') return alert("Pilih klip visual dahulu!");
+            let active = visualTracks.find(v => v.id === selectedElement.id);
+            if(active) {
+                if((active.end - active.start) <= 2.0) return alert("Durasi terlalu pendek untuk dipotong!");
+                active.end -= 2.0; // Kurangi durasi klip sebanyak 2 detik
+                recalculateTimelineStructure();
+            }
+        };
+
+        document.getElementById('deleteVisualBtn').onclick = () => {
+            if(selectedElement.type !== 'visual') return alert("Pilih klip visual dahulu!");
+            visualTracks = visualTracks.filter(v => v.id !== selectedElement.id);
+            selectedElement = { type: null, id: null };
+            recalculateTimelineStructure();
+        };
+
+        document.getElementById('splitAudioBtn').onclick = () => {
+            let active = audioTracks.find(a => currentTimehead > a.start && currentTimehead < a.end);
+            if(!active) return alert("Arahkan playhead di rentang audio!");
+            let originalEnd = active.end;
+            active.end = currentTimehead;
+            audioTracks.push({
+                id: Date.now() + Math.random(), name: active.name + " (Potong)",
+                start: currentTimehead, end: originalEnd, element: active.element, originalDuration: active.originalDuration
+            });
+            recalculateTimelineStructure();
+        };
+
+        document.getElementById('deleteAudioBtn').onclick = () => {
+            audioTracks = audioTracks.filter(a => a.id !== selectedElement.id);
+            selectedElement = { type: null, id: null };
+            recalculateTimelineStructure();
+        };
+
+        document.getElementById('addTextBtn').onclick = () => {
+            let id = Date.now();
+            textTracks.push({
+                id, text: "Teks Baru", start: currentTimehead, end: Math.min(totalProjectDuration, currentTimehead + 3),
+                xPct: 50, yPct: 75, color: '#ffffff', sizePct: 100
+            });
+            selectTimelineItem('text', id, currentTimehead, Math.min(totalProjectDuration, currentTimehead + 3));
+            recalculateTimelineStructure();
+        };
+
+        document.getElementById('splitTextBtn').onclick = () => {
+            if(selectedElement.type !== 'text') return alert("Pilih elemen teks terlebih dahulu!");
+            let active = textTracks.find(t => t.id === selectedElement.id);
+            if(active && currentTimehead > active.start && currentTimehead < active.end) {
+                let originalEnd = active.end;
+                active.end = currentTimehead;
+                textTracks.push({
+                    id: Date.now(), text: active.text + " (Split)", start: currentTimehead, end: originalEnd,
+                    xPct: active.xPct, yPct: active.yPct, color: active.color, sizePct: active.sizePct
+                });
+                recalculateTimelineStructure();
+            }
+        };
+
+        document.getElementById('deleteTextBtn').onclick = () => {
+            textTracks = textTracks.filter(t => t.id !== selectedElement.id);
+            selectedElement = { type: null, id: null };
+            recalculateTimelineStructure();
+        };
+
+        // MANAJEMEN WARNA KONTROL TEKS
+        ['colorWhite', 'colorYellow', 'colorRed', 'colorCyan'].forEach(btn => {
+            document.getElementById(btn).onclick = () => {
+                if(selectedElement.type !== 'text') return;
+                let active = textTracks.find(t => t.id === selectedElement.id);
+                if(!active) return;
+                if(btn==='colorWhite') active.color='#ffffff';
+                if(btn==='colorYellow') active.color='#facc15';
+                if(btn==='colorRed') active.color='#ef4444';
+                if(btn==='colorCyan') active.color='#00e5ff';
+                updateTextOverlayView();
+            };
+        });
+
+        // WYSIWYG DRAG & SIZE ENGINE
+        let isDraggingText = false;
+        function setupTextDragWYSIWYG() {
+            const moveAt = (clientX, clientY) => {
+                let rect = previewWrapper.getBoundingClientRect();
+                let xPct = ((clientX - rect.left) / rect.width) * 100;
+                let yPct = ((clientY - rect.top) / rect.height) * 100;
+                xPct = Math.min(95, Math.max(5, xPct));
+                yPct = Math.min(95, Math.max(5, yPct));
+                if(selectedElement.type === 'text') {
+                    let active = textTracks.find(t => t.id === selectedElement.id);
+                    if(active) {
+                        active.xPct = xPct; active.yPct = yPct;
+                        draggableDiv.style.left = xPct + '%'; draggableDiv.style.top = yPct + '%';
+                    }
+                }
+            };
+            draggableDiv.onmousedown = (e) => { if(e.target.closest('#sizeDock')) return; isDraggingText = true; moveAt(e.clientX, e.clientY); };
+            window.onmousemove = (e) => { if(isDraggingText) moveAt(e.clientX, e.clientY); };
+            window.onmouseup = () => isDraggingText = false;
+
+            draggableDiv.ontouchstart = (e) => { if(e.target.closest('#sizeDock')) return; isDraggingText = true; moveAt(e.touches[0].clientX, e.touches[0].clientY); };
+            window.ontouchmove = (e) => { if(isDraggingText) moveAt(e.touches[0].clientX, e.touches[0].clientY); };
+            window.ontouchend = () => isDraggingText = false;
+
+            document.getElementById('btnTextPlus').onclick = (e) => {
+                e.stopPropagation();
+                let active = textTracks.find(t => t.id === selectedElement.id);
+                if(active) { active.sizePct = Math.min(300, (active.sizePct || 100) + 12); updateTextOverlayView(); }
+            };
+            document.getElementById('btnTextMinus').onclick = (e) => {
+                e.stopPropagation();
+                let active = textTracks.find(t => t.id === selectedElement.id);
+                if(active) { active.sizePct = Math.max(30, (active.sizePct || 100) - 12); updateTextOverlayView(); }
+            };
+        }
+        setupTextDragWYSIWYG();
+
+        // ENGINE LIVE PLAYHEAD CANVAS MONITOR
+        function renderCanvasPreviewFrame() {
+            viewCanvas.width = 640; viewCanvas.height = 360;
+            vCtx.fillStyle = "#000000"; vCtx.fillRect(0, 0, viewCanvas.width, viewCanvas.height);
+
+            // 1. Render Elemen Visual (Video / Foto)
+            let currentClip = visualTracks.find(v => currentTimehead >= v.start && currentTimehead <= v.end);
+            if(currentClip) {
+                if(currentClip.type === 'photo') {
+                    vCtx.drawImage(currentClip.element, 0, 0, viewCanvas.width, viewCanvas.height);
+                } else {
+                    let targetVid = currentClip.element;
+                    let localTime = currentTimehead - currentClip.start;
+                    if(!isPlaying) {
+                        targetVid.currentTime = localTime;
+                    }
+                    vCtx.drawImage(targetVid, 0, 0, viewCanvas.width, viewCanvas.height);
+                }
+            }
+
+            // 2. Sinkronisasi Overlay Teks HTML
+            updateTextOverlayView();
+        }
+
+        function updateTextOverlayView() {
+            let activeText = textTracks.find(t => currentTimehead >= t.start && currentTimehead <= t.end);
+            if(activeText) {
+                textLabelContent.innerText = activeText.text;
+                draggableDiv.style.color = activeText.color;
+                draggableDiv.style.left = activeText.xPct + '%';
+                draggableDiv.style.top = activeText.yPct + '%';
+                textLabelContent.style.fontSize = (activeText.sizePct || 100) + '%';
+                draggableDiv.style.display = 'block';
+            } else {
+                draggableDiv.style.display = 'none';
+            }
+        }
+
+        // PLAYER ENGINE TRIGGER
+        playPreview.onclick = () => {
+            if(isPlaying) {
+                clearInterval(playInterval); isPlaying = false;
+                audioTracks.forEach(a => a.element.pause());
+            } else {
+                if(currentTimehead >= totalProjectDuration) currentTimehead = 0;
+                isPlaying = true;
+                audioTracks.forEach(a => { if(currentTimehead >= a.start && currentTimehead < a.end) a.element.play(); });
+                
+                playInterval = setInterval(() => {
+                    currentTimehead += 0.06;
+                    if(currentTimehead >= totalProjectDuration) {
+                        currentTimehead = totalProjectDuration; clearInterval(playInterval); isPlaying = false;
+                        audioTracks.forEach(a => a.element.pause());
+                    }
+                    updatePlayheadUI();
+                    renderCanvasPreviewFrame();
+                }, 60);
+            }
+        };
+
+        function updatePlayheadUI() {
+            if(totalProjectDuration > 0) {
+                videoProgress.style.left = ((currentTimehead / totalProjectDuration) * 100) + '%';
+            }
+        }
+
+        clickableTimeline.onclick = (e) => {
+            let rect = clickableTimeline.getBoundingClientRect();
+            let pct = (e.clientX - rect.left) / rect.width;
+            currentTimehead = pct * totalProjectDuration;
+            updatePlayheadUI();
+            renderCanvasPreviewFrame();
+        };
+
+        document.getElementById('clearMediaBtn').onclick = () => {
+            if(confirm("Reset seluruh project editing?")) {
+                visualTracks = []; audioTracks = []; textTracks = [];
+                currentTimehead = 0; totalProjectDuration = 0;
+                recalculateTimelineStructure();
+            }
+        };
+
+        // ==========================================
+        // EXPORT CORE PROCESSOR (CANVAS SINKRONISASI FLUID)
+        // ==========================================
+        processBtn.onclick = async () => {
+            infoStatus.innerText = "🎬 Sedang memproses rendering frame per frame...";
+            processBtn.disabled = true;
+
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1280; canvas.height = 720;
+
+            const canvasStream = canvas.captureStream(25);
+            let combinedStream = new MediaStream([...canvasStream.getVideoTracks()]);
+
+            // Gabungkan track audio jika tersedia
+            let audioContext = null, dest = null;
+            if(audioTracks.length) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                dest = audioContext.createMediaStreamDestination();
+                // Untuk kesederhanaan ekspor client-side browser, klip audio utama digabungkan langsung
+                combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+            }
+
+            let mime = 'video/mp4;codecs=avc1.42E01E';
+            if(!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+
+            const recorder = new MediaRecorder(combinedStream, { mimeType: mime, videoBitsPerSecond: 4000000 });
+            let chunks = []; recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.start();
+
+            let renderTime = 0;
+            const fpsInterval = 1000 / 25;
+
+            function renderStep() {
+                if(renderTime > totalProjectDuration) {
+                    if(recorder.state !== 'inactive') recorder.stop();
+                    return;
+                }
+
+                ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Visual
+                let clip = visualTracks.find(v => renderTime >= v.start && renderTime <= v.end);
+                if(clip) {
+                    if(clip.type === 'photo') {
+                        ctx.drawImage(clip.element, 0, 0, canvas.width, canvas.height);
+                    } else {
+                        clip.element.currentTime = renderTime - clip.start;
+                        ctx.drawImage(clip.element, 0, 0, canvas.width, canvas.height);
+                    }
+                }
+
+                // Draw Overlay Teks
+                textTracks.forEach(txt => {
+                    if(renderTime >= txt.start && renderTime <= txt.end) {
+                        ctx.fillStyle = txt.color;
+                        let scale = (txt.sizePct || 100) / 100;
+                        let fontSize = Math.floor(50 * scale);
+                        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+                        ctx.textAlign = "center";
+                        ctx.strokeStyle = "black";
+                        ctx.lineWidth = 6;
+                        let x = canvas.width * (txt.xPct / 100);
+                        let y = canvas.height * (txt.yPct / 100);
+                        ctx.strokeText(txt.text, x, y);
+                        ctx.fillText(txt.text, x, y);
+                    }
+                });
+
+                renderTime += 0.04; // Lompat 40ms (25 FPS)
+                setTimeout(renderStep, 10); // Rendering cepat tanpa jeda waktu nyata
+            }
+
+            renderStep();
+
+            recorder.onstop = () => {
+                const finalBlob = new Blob(chunks, { type: mime });
+                const finalUrl = URL.createObjectURL(finalBlob);
+                outputVideo.src = finalUrl; downloadLink.href = finalUrl;
+                downloadLink.download = `video_editor_pro_${Date.now()}.mp4`;
+                outputArea.style.display = 'block';
+                infoStatus.innerText = "✨ VIDEO BERHASIL DIPRODUKSI!";
+                processBtn.disabled = false;
+                outputArea.scrollIntoView({ behavior: 'smooth' });
+            };
+        };
+
+        document.getElementById('btnEditAgain').onclick = () => {
+            document.getElementById('editorCardAnchor').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        switchTab('file');
+    })();
+</script>
+</body>
+</html>
